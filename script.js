@@ -6,17 +6,44 @@
    Semidan Robaina Estevez (semidanrobaina.com)
 */
 
-let cnv = document.getElementById("basin-canvas");
-let cnv_width = window.innerWidth/1;
-let cnv_height = window.innerHeight/1;
-cnv.setAttribute('width', cnv_width);
-cnv.setAttribute('height', cnv_height);
-let ctx = cnv.getContext('2d');
+let cnv_width = window.innerWidth / 2;
+let cnv_height = window.innerHeight / 2;
 
-let x_min = -Math.PI/1;
-let x_max = Math.PI/1;
-let y_min = -((x_max - x_min) / cnv_width) * 0.5 * cnv_height;
-let y_max = ((x_max - x_min) / cnv_width) * 0.5 * cnv_height;
+let cnv_0 = document.getElementById("basin-canvas-0");
+let cnv_0_width = cnv_width;
+let cnv_0_height = cnv_height;
+cnv_0.setAttribute('width', cnv_0_width);
+cnv_0.setAttribute('height', cnv_0_height);
+let ctx_0 = cnv_0.getContext('2d');
+
+let x_0_min = -Math.PI / 1;
+let x_0_max = Math.PI / 1;
+let y_0_min = -((x_0_max - x_0_min) / cnv_0_width) * 0.5 * cnv_0_height;
+let y_0_max = ((x_0_max - x_0_min) / cnv_0_width) * 0.5 * cnv_0_height;
+
+let cnv_1 = document.getElementById("basin-canvas-1");
+let cnv_1_width = cnv_width;
+let cnv_1_height = cnv_height;
+cnv_1.setAttribute('width', cnv_1_width);
+cnv_1.setAttribute('height', cnv_1_height);
+let ctx_1 = cnv_1.getContext('2d');
+
+let x_1_min = -Math.PI / 1;
+let x_1_max = Math.PI / 1;
+let y_1_min = -((x_1_max - x_1_min) / cnv_1_width) * 0.5 * cnv_1_height;
+let y_1_max = ((x_1_max - x_1_min) / cnv_1_width) * 0.5 * cnv_1_height;
+
+let cnv_2 = document.getElementById("basin-canvas-2");
+let cnv_2_width = cnv_width;
+let cnv_2_height = cnv_height;
+cnv_2.setAttribute('width', cnv_2_width);
+cnv_2.setAttribute('height', cnv_2_height);
+let ctx_2 = cnv_2.getContext('2d');
+
+let x_2_min = -Math.PI / 1;
+let x_2_max = Math.PI / 1;
+let y_2_min = -((x_2_max - x_2_min) / cnv_2_width) * 0.5 * cnv_2_height;
+let y_2_max = ((x_2_max - x_2_min) / cnv_2_width) * 0.5 * cnv_2_height;
 
 
 
@@ -69,86 +96,153 @@ class Complex {
 }
 
 
-//const rangeStep = (start, stop, n_points) => (stop - start) / n_points;
-//let w_step, h_step;
+class ComplexCanvas {
+  /* Creates a canvas to plot basin of attraction and an overlapping
+     canvas to plot the selection rectangle
+  */
+  constructor(cnv_id, f, fp, cnv_width, cnv_height,
+              real_min, real_max, imag_min, imag_max) {
+    this.cnv = document.getElementById(cnv_id);
+    this.cnv_width = cnv_width || window.innerWidth / 2;
+    this.cnv_height = cnv_height || window.innerHeight / 2;
+    this.cnv.setAttribute('width', this.cnv_width);
+    this.cnv.setAttribute('height', this.cnv_height);
+    this.ctx = this.cnv.getContext('2d');
+    this.f = f;
+    this.fp = fp;
+    this.real_min = real_min || -Math.PI;
+    this.real_max = real_max || Math.PI;
+    this.imag_min = imag_min || -Math.PI;
+    this.imag_max = imag_max || Math.PI;
+  }
+
+  drawBasinOfAttraction() {
+    /* Returns 2D array classifying the points in a complex grid into the n
+       basins of attraction of the input function
+    */
+    let w_pixels = this.cnv.width;
+    let h_pixels = this.cnv.height;
+    const rangeStep = (start, stop, n_points) => (stop - start) / n_points;
+
+    w_step = rangeStep(this.real_min, this.real_max, w_pixels);
+    h_step = rangeStep(this.imag_min, this.imag_max, h_pixels);
+
+    // let color, green, blue, red, factor;
+    for (let j=0; j<h_pixels; j++) {
+
+      for (let i=0; i<w_pixels; i++) {
+
+        let real = this.real_min + i * w_step;
+        let imag = this.imag_min + j * h_step;
+        let z = new Complex(real, imag);
+        let out_root = this._findComplexRoot(z);
+
+        this._fillCanvasPixel(i, j, out_root);
+      }
+    }
+  }
+
+  _findComplexRoot(r_0, tol=1e-6) {
+    /* Find complex roots of function 'f' via Newton's method */
+
+    function updateRootGuess(f, fp, r_n) {
+        return r_n.subtract(f(r_n).divide(fp(r_n)))
+    }
+
+    let n_decimals = 6;
+    let n_iter = 0;
+    let r_n = updateRootGuess(this.f, this.fp, r_0);;
+    let r_np1 = updateRootGuess(this.f, this.fp, r_n);
+
+    while (Math.abs(r_n.r - r_np1.r) > tol) {
+      n_iter++;
+      r_n = r_np1;
+      r_np1 = updateRootGuess(this.f, this.fp, r_np1);
+    }
+    return {"root": r_np1.round(n_decimals), "niter": n_iter}
+  }
+
+  _fillCanvasPixel(pixel_i, pixel_j, data) {
+    let color, red, green, blue;
+    let factor = Math.sqrt(data["niter"])/Math.sqrt(10);
+    // color = `rgba(${red},${green}, ${blue}, ${factor})`;
+    if (factor > 0) {
+        red = 50 * (1 / factor);//data["root"].i*150*(1/factor);
+        blue = 50 * (1 / factor);
+        green = 50 * (1 / factor);//data["root"].r*150*(1/factor);
+        color = `rgb(${red},${green}, ${blue})`;
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(pixel_i, pixel_j, 1, 1);
+    } else {
+        this.ctx.fillRect(pixel_i, pixel_j, 1, 1);
+    }
+  }
+
+}
 
 
-function findBasinOfAttraction(f_expresion, real_min, real_max,
+const rangeStep = (start, stop, n_points) => (stop - start) / n_points;
+let w_step, h_step;
+
+const one = new Complex(1, 0);
+const two = new Complex(2, 0);
+const three = new Complex(3, 0);
+const five = new Complex(5, 0);
+const six = new Complex(6, 0);
+const seven = new Complex(7, 0);
+
+
+// const f_0 = (z) => z.multiply(z).multiply(z).subtract(one);
+// const fp_0 = (z) => three.multiply(z).multiply(z);
+
+const f_0 = (z) => z.multiply(z).multiply(z).multiply(z).multiply(z).subtract(one);
+const fp_0 = (z) => five.multiply(z).multiply(z).multiply(z).multiply(z);
+
+// const f = (z) => z.multiply(z).multiply(z).multiply(z).multiply(z).multiply(z).subtract(one);
+// const fp = (z) => six.multiply(z).multiply(z).multiply(z).multiply(z).multiply(z);
+
+// const f = (z) => z.multiply(z).multiply(z).multiply(z).multiply(z).multiply(z).multiply(z).subtract(one);
+// const fp = (z) => seven.multiply(z).multiply(z).multiply(z).multiply(z).multiply(z).multiply(z);
+
+// const f = (z) => z.sin();
+// const fp = (z) => z.cos();
+
+// const f = (z) => z.multiply(z).multiply(z).add(z.multiply(z)).subtract(one);
+// const fp = (z) => three.multiply(z.multiply(z)).add(two.multiply(z));
+
+const f_1 = (z) => z.tan();
+const fp_1 = (z) => one.divide(z.cos().cos());
+
+
+function drawBasinOfAttraction(ctx, f, fp, real_min, real_max,
                                imag_min, imag_max) {
 
   /* Returns 2D array classifying the points in a complex grid into the n
      basins of attraction of the input function
   */
-  
-  //const f = math.parse(f_expresion).compile();
-  //const fp = math.derivative(f_expresion, "z").compile();
-
-  const one = new Complex(1, 0);
-  const two = new Complex(2, 0);
-  const three = new Complex(3, 0); 
-  const five = new Complex(5, 0);  
-  
-  // const f = (z) => z.pow(3).subtract(one); // super slow! wow
-  // const fp = (z) => three.multiply(z.pow(2));
-  
-  // const f = (z) => z.multiply(z).multiply(z).subtract(one);
-  // const fp = (z) => three.multiply(z).multiply(z);
-  
-  // const f = (z) => z.multiply(z).multiply(z).multiply(z).multiply(z).subtract(one);
-  // const fp = (z) => five.multiply(z).multiply(z).multiply(z).multiply(z);
-  
-  // const f = (z) => z.sin();
-  // const fp = (z) => z.cos();
-  
-  const f = (z) => z.tan();
-  const fp = (z) => one.divide(z.cos().multiply(z.cos()));
-  
-  // const f = (z) => z.multiply(z).multiply(z).add(z.multiply(z)).subtract(one);
-  // const fp = (z) => three.multiply(z.multiply(z)).add(two.multiply(z));
-
-
 
   real_min = typeof real_min !== 'undefined' ? real_min : -10;
   real_max = typeof real_max !== 'undefined' ? real_max : 10;
   imag_min = typeof imag_min !== 'undefined' ? imag_min : -10;
   imag_max = typeof imag_max !== 'undefined' ? imag_max : 10;
 
-  let w_pixels = cnv.width;
-  let h_pixels = cnv.height;
+  let w_pixels = cnv_0.width;
+  let h_pixels = cnv_0.height;
 
-  // const rangeStep = (start, stop, n_points) => (stop - start) / n_points;
-  // const w_step = rangeStep(real_min, real_max, w_pixels);
-  // const h_step = rangeStep(imag_min, imag_max, h_pixels);
   w_step = rangeStep(real_min, real_max, w_pixels);
   h_step = rangeStep(imag_min, imag_max, h_pixels);
-  
+
   let color, green, blue, red, factor;
   for (let j=0; j<h_pixels; j++) {
-    
+
     for (let i=0; i<w_pixels; i++) {
-        
 
       let real = real_min + i * w_step;
       let imag = imag_min + j * h_step;
       let z = new Complex(real, imag);
-      let out = findComplexRoot(f, fp, z, tol=1e-6);
-      
-      factor = Math.sqrt(out["niter"])/Math.sqrt(10);
-      // factor = Math.log(out["niter"])/Math.log(15);
-      // factor = out["niter"] / 15;
-      // color = `rgba(${red},${green}, ${blue}, ${factor})`;
-      if (factor > 0) {
-          blue = out["root"].i*150;//*(1/factor);
-          red = 50;//*(1/factor);
-          green = out["root"].r*150;//*(1/factor);
-          color = `rgb(${red},${green}, ${blue})`;
-          ctx.fillStyle = color;
-          ctx.fillRect(i, j, 1, 1);
-      } else {
-          ctx.fillRect(i, j, 1, 1);
-      }
+      let out_root = findComplexRoot(f, fp, z, tol=1e-6);
 
-      
+      fillCanvasPixel(ctx, i, j, out_root);
 
     }
 
@@ -157,8 +251,25 @@ function findBasinOfAttraction(f_expresion, real_min, real_max,
 }
 
 
+function fillCanvasPixel(ctx, pixel_i, pixel_j, data) {
+  factor = Math.sqrt(data["niter"])/Math.sqrt(10);
+  // factor = Math.log(data["niter"])/Math.log(15);
+  // factor = data["niter"] / 15;
+  // color = `rgba(${red},${green}, ${blue}, ${factor})`;
+  if (factor > 0) {
+      red = 50*(1/factor);//data["root"].i*150*(1/factor);
+      blue = 50*(1/factor);
+      green = 50*(1/factor);//data["root"].r*150*(1/factor);
+      color = `rgb(${red},${green}, ${blue})`;
+      ctx.fillStyle = color;
+      ctx.fillRect(pixel_i, pixel_j, 1, 1);
+  } else {
+      ctx.fillRect(pixel_i, pixel_j, 1, 1);
+  }
+}
+
 function updateRootGuess(f, fp, r_n) {
-    return r_n.subtract(f(r_n).divide(fp(r_n)))           
+    return r_n.subtract(f(r_n).divide(fp(r_n)))
 }
 
 
@@ -199,7 +310,15 @@ function findComplexRoot(f, fp, r_0, tol=1e-10) {
 
 // *******************************
 console.time("basin");
-let basin = findBasinOfAttraction("z^3 - 1", real_min=x_min, real_max=x_max,
-                                  imag_min=y_min, imag_max=y_max);
+drawBasinOfAttraction(ctx_1, f_0, fp_0, real_min=x_0_min, real_max=x_0_max,
+                      imag_min=y_0_min, imag_max=y_0_max);
 console.timeEnd("basin");
+//
+// drawBasinOfAttraction(ctx_1, f_1, fp_1, real_min=x_1_min, real_max=x_1_max,
+//                       imag_min=y_1_min, imag_max=y_1_max);
 
+
+let canvas1 = new ComplexCanvas("basin-canvas-0", f_0, fp_0);
+console.time("basin-class");
+canvas1.drawBasinOfAttraction();
+console.timeEnd("basin-class");
