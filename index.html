@@ -11,14 +11,41 @@
     <title>Basin of Attraction</title>
     <link rel="stylesheet" href="master.css">
     <script src="https://unpkg.com/mathjs@6.2.1/dist/math.min.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            processEscapes: true
+          }
+        });
+      </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=default" async></script>
   </head>
 
   <body>
 
-    <canvas id="basin-canvas-0"></canvas>
-    <canvas id="basin-canvas-1"></canvas>
-    <canvas id="basin-canvas-2"></canvas>
-    <canvas id="basin-canvas-3"></canvas>
+    <div id="title-container">
+      <div id="title">An exposition of complex basins of attraction</div>  
+    </div>
+
+    <div id="grid_container">
+      <div class="grid_item" tabindex="0">
+        <div class="grid_item_title">$f(z) = z^5 - 1$</div>
+        <canvas class="complex-canvas" id="basin-canvas-0"></canvas>
+      </div>
+      <div class="grid_item" tabindex="0">
+        <div class="grid_item_title">$f(z) = \tan{z}$</div>
+        <canvas class="complex-canvas" id="basin-canvas-1"></canvas>
+      </div>
+      <div class="grid_item" tabindex="0">
+        <div class="grid_item_title">$f(z) = \sin{z}$</div>
+        <canvas class="complex-canvas" id="basin-canvas-2"></canvas>
+      </div>
+      <div class="grid_item" tabindex="0">
+        <div class="grid_item_title">$f(z) = z^7 - 1$</div>
+        <canvas class="complex-canvas" id="basin-canvas-3"></canvas>
+      </div>
+    </div>
 
    <script src="script.js"></script>
   </body>
