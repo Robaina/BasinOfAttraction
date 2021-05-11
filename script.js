@@ -104,7 +104,7 @@ class ComplexCanvas {
         let real = this.real_min + i * w_step;
         let imag = this.imag_min + j * h_step;
         let z = new Complex(real, imag);
-        let out_root = this._findComplexRoot(z);
+        let out_root = this._findComplexRoot(this.f, this.fp, z);
 
         this._fillCanvasPixel(i, j, out_root);
       }
@@ -122,7 +122,7 @@ class ComplexCanvas {
 
   }
 
-  _findComplexRoot(r_0, tol=1e-6) {
+  _findComplexRoot(f, fp, r_0, tol=1e-6) {
     /* Find complex roots of function 'f' via Newton's method */
 
     function updateRootGuess(f, fp, r_n) {
@@ -131,13 +131,13 @@ class ComplexCanvas {
 
     let n_decimals = 6;
     let n_iter = 0;
-    let r_n = updateRootGuess(this.f, this.fp, r_0);;
-    let r_np1 = updateRootGuess(this.f, this.fp, r_n);
+    let r_n = updateRootGuess(f, fp, r_0);;
+    let r_np1 = updateRootGuess(f, fp, r_n);
 
     while (Math.abs(r_n.r - r_np1.r) > tol) {
       n_iter++;
       r_n = r_np1;
-      r_np1 = updateRootGuess(this.f, this.fp, r_np1);
+      r_np1 = updateRootGuess(f, fp, r_np1);
     }
     return {"root": r_np1.round(n_decimals), "niter": n_iter}
   }
@@ -148,9 +148,10 @@ class ComplexCanvas {
     // color = `rgba(${red},${green}, ${blue}, ${factor})`;
     if (factor > 0) {
         red = 50*data["root"].i*150*(1/factor);
-        blue = 50 * (1 / factor);
+        blue =  50*data["root"].i*150;
         green = 50*data["root"].r*150*(1/factor);
         color = `rgba(${red}, ${green}, ${blue}, ${factor})`;
+        //color = `rgba(${251}, ${251}, ${251}, ${factor})`;
         this.ctx.fillStyle = color;
         this.ctx.fillRect(pixel_i, pixel_j, 1, 1);
     } else {
