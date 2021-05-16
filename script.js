@@ -59,13 +59,14 @@ class ComplexCanvas {
   /* Creates a canvas to plot basin of attraction and an overlapping
      canvas to plot the selection rectangle
   */
-  constructor(cnv_id, f, fp, cnv_width, cnv_height,
+  constructor(cnv_id, f, fp,
               real_min, real_max, imag_min, imag_max) {
+    let grid_item = document.getElementsByClassName("grid_item")[0];
     this.cnv = document.getElementById(cnv_id);
-    this.cnv_width = cnv_width || this.cnv.width;
-    this.cnv_height = cnv_height || this.cnv.height;
-    this.cnv.setAttribute('width', this.cnv_width);
-    this.cnv.setAttribute('height', this.cnv_height);
+    this.cnv.width = grid_item.clientWidth;
+    this.cnv.height = grid_item.clientHeight;
+    this.cnv_width = this.cnv.width;
+    this.cnv_height = this.cnv.height;
     this.ctx = this.cnv.getContext('2d');
     this.f = f;
     this.fp = fp;
@@ -73,19 +74,6 @@ class ComplexCanvas {
     this.real_max = real_max || Math.PI;
     this.imag_min = imag_min || -Math.PI;
     this.imag_max = imag_max || Math.PI;
-
-    // // Create overlapping canvas to draw selection rectangle
-    // this.cnv_o = document.createElement("canvas");
-    // document.body.append(this.cnv_o);
-    // this.cnv_o.setAttribute('width', this.cnv_width);
-    // this.cnv_o.setAttribute('height', this.cnv_height);
-    // this.cnv_o.style.position = "absolute";
-    // this.cnv_o.style.top = this.cnv.offsetTop;
-    // this.cnv_o.style.left = this.cnv.offsetLeft;
-    // this.cnv_o.style["z-index"] = 2;
-    // this.cnv_o.style["background-color"] = "transparent";
-    // this.ctx_o = this.cnv.getContext('2d');
-    // this._clearSelectionCanvas();
   }
 
   drawBasinOfAttraction() {
@@ -109,17 +97,6 @@ class ComplexCanvas {
         this._fillCanvasPixel(i, j, out_root);
       }
     }
-
-    // this.ctx_o.beginPath();
-    // this.ctx_o.lineWidth = "5";
-    // this.ctx_o.strokeStyle = "rgba(255, 0, 0, 0.75)";
-    // this.ctx_o.rect(0, 0, 100, 100);
-    // this.ctx_o.stroke();
-    // this.ctx_o.clearRect(0,0,100,100);
-
-    // this.drawSelection(10, 10, 100, 50);
-    // this._clearSelectionCanvas();
-
   }
 
   _findComplexRoot(f, fp, r_0, tol=1e-6) {
@@ -147,10 +124,10 @@ class ComplexCanvas {
     let factor = Math.sqrt(data["niter"]) / Math.sqrt(10);
     // color = `rgba(${red},${green}, ${blue}, ${factor})`;
     if (factor > 0) {
-        red = 50*data["root"].i*150*(1/factor);
-        blue =  50*data["root"].i*150;
-        green = 50*data["root"].r*150*(1/factor);
-        color = `rgba(${red}, ${green}, ${blue}, ${factor})`;
+        red = 100*data["root"].r;
+        blue =  100*data["root"].r;
+        green = 100*data["root"].i;
+        color = `rgba(${red}, ${green}, ${blue}, ${1/factor})`;
         //color = `rgba(${251}, ${251}, ${251}, ${factor})`;
         this.ctx.fillStyle = color;
         this.ctx.fillRect(pixel_i, pixel_j, 1, 1);
@@ -159,76 +136,7 @@ class ComplexCanvas {
     }
   }
 
- drawSelection(i, j, width, height) {
-   if (cnv_o !== null) {document.body.remove(cnv_o);} // this causes body to be null!! Wtf...
-   cnv_o = document.createElement("canvas");
-   console.log(document.body);
-   document.body.append(cnv_o);
-   cnv_o.setAttribute('width', this.cnv_width);
-   cnv_o.setAttribute('height', this.cnv_height);
-   cnv_o.style.position = "absolute";
-   cnv_o.style.top = this.cnv.offsetTop;
-   cnv_o.style.left = this.cnv.offsetLeft;
-   cnv_o.style["z-index"] = 2;
-   cnv_o.style["background-color"] = "rgba(255, 255, 255, 0)";
-   let ctx_o = this.cnv.getContext('2d');
-
-   // Seems very hard to just clear this canvas... overwritting it does not work. Clearing rect does not work, making temp canvas does not work...
-
-   // clear canvas
-   // this.ctx_o.clearRect(0, 0, this.cnv_o.width, this.cnv_o.height);
-   // this._clearSelection(0, 0, 100, 100);
-   // this.cnv_o.style["background-color"] = "rgba(255, 255, 255, 0)";
-   // this.ctx_o.beginPath();
-   // this.ctx_o.fillStyle = "rgba(100, 0, 0, 1)";
-   // this.ctx_o.rect(0, 0, this.cnv_o.width, this.cnv_o.height);
-   // this.ctx_o.fill();
-
-   // draw rectangle
-   // ctx_o.beginPath();
-   // ctx_o.lineWidth = "5";
-   // ctx_o.strokeStyle = "rgba(255, 0, 0, 0.75)";
-   // ctx_o.strokeRect(i, j, width, height);
-   // ctx_o.stroke();
- }
-
- _clearSelection(i, j, width, height) {
-   this.ctx_o.fillStyle = "rgba(0, 100, 0, 0.8)";
-   for (let a=i; a<i+width; a++) {
-     for (let b=j; b<j+height; b++) {
-       this.ctx.fillRect(a, b, 1, 1);
-     }
-   }
- }
-
- _clearSelectionCanvas() {
-   let imageData = this.ctx_o.getImageData(0, 0, this.cnv_o.width, this.cnv_o.height);
-   for (let i=3; i<imageData.data.length; i+=4) {
-     imageData.data[i] = 0;
-   }
-   this.ctx_o.putImageData(imageData, 0, 0);
- }
-
- _complexToPixelCoordinates(complex_r, complex_i) {
-   let leftCorner = {
-     "i": this._complexToPixelCoordinates(real_min),
-     "j": this._complexToPixelCoordinates(imag_max)
-   };
-   let rectSize = {
-     "w": this._complexToPixelCoordinates(real_max - real_min),
-     "h": this._complexToPixelCoordinates(imag_max - imag_min)
-   };
-   return
- }
-
- _pixelToComplexCoordinates(pixel_i, pixel_j) {
-   let real = this.real_min + pixel_i * w_step;
-   let imag = this.imag_min + pixel_j * h_step;
-   return
- }
-
 }
-
 
 /* FUNCTIONS */
 class Functions {
@@ -257,7 +165,7 @@ class Functions {
 
 
 let f = new Functions();
-let canvas0 = new ComplexCanvas("basin-canvas-0", f.z5, f.z5p);
+let canvas0 = new ComplexCanvas("basin-canvas-0", f.z5, f.z5p, -1.5, 1.5, -1.5, 1.5);
 canvas0.drawBasinOfAttraction();
 
 let canvas1 = new ComplexCanvas("basin-canvas-1", f.tan, f.tanp);
