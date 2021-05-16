@@ -1,7 +1,7 @@
 /* Show basin of attraction of the complex roots of specified function
    Roots are computed through Newton's method, i.e. iteraing:
 
-                    r_(n+1) = r_n - f(r_n)/f'(r_n)
+                    r_(n+1) = r_n - f(r_n) / f'(r_n)
 
    Semidan Robaina Estevez (semidanrobaina.com)
 */
@@ -76,7 +76,7 @@ class ComplexCanvas {
     this.imag_max = imag_max || Math.PI;
   }
 
-  drawBasinOfAttraction() {
+  drawBasinOfAttraction(color_function) {
     /* Returns 2D array classifying the points in a complex grid into the n
        basins of attraction of the input function
     */
@@ -94,12 +94,12 @@ class ComplexCanvas {
         let z = new Complex(real, imag);
         let out_root = this._findComplexRoot(this.f, this.fp, z);
 
-        this._fillCanvasPixel(i, j, out_root);
+        this._fillCanvasPixel(i, j, out_root, color_function);
       }
     }
   }
 
-  _findComplexRoot(f, fp, r_0, tol=1e-6) {
+  _findComplexRoot(f, fp, r_0, tol=1e-3) {
     /* Find complex roots of function 'f' via Newton's method */
 
     function updateRootGuess(f, fp, r_n) {
@@ -119,16 +119,12 @@ class ComplexCanvas {
     return {"root": r_np1.round(n_decimals), "niter": n_iter}
   }
 
-  _fillCanvasPixel(pixel_i, pixel_j, data) {
-    let color, red, green, blue;
-    let factor = Math.sqrt(data["niter"]) / Math.sqrt(10);
-    // color = `rgba(${red},${green}, ${blue}, ${factor})`;
+  _fillCanvasPixel(pixel_i, pixel_j, out_root, color_function) {
+    let factor = Math.sqrt(out_root["niter"]) / Math.sqrt(10);
     if (factor > 0) {
-        red = 100*data["root"].r;
-        blue =  100*data["root"].r;
-        green = 100*data["root"].i;
-        color = `rgba(${red}, ${green}, ${blue}, ${1/factor})`;
-        //color = `rgba(${251}, ${251}, ${251}, ${factor})`;
+        let colors = color_function(out_root);
+        // let color = `rgba(${colors.red}, ${colors.green}, ${colors.blue}, ${1/factor})`
+        let color = `rgb(${colors.red}, ${colors.green}, ${colors.blue}`
         this.ctx.fillStyle = color;
         this.ctx.fillRect(pixel_i, pixel_j, 1, 1);
     } else {
@@ -137,6 +133,7 @@ class ComplexCanvas {
   }
 
 }
+
 
 /* FUNCTIONS */
 class Functions {
@@ -163,16 +160,44 @@ class Functions {
   }
 }
 
+function colorFunctionA(data) {
+  let red = 100*data["root"].r;
+  let blue =  100*data["root"].r;
+  let green = 100*data["root"].i;
+  return {"red": red, "blue": blue, "green": green}
+}
+
+function colorFunctionB(data) {
+  let red = 100*data["root"].i;
+  let blue =  100*data["root"].r;
+  let green = 1*data["root"].i;
+  return {"red": red, "blue": blue, "green": green}
+}
+
+function colorFunctionC(data) {
+  let red = 0*data["root"].i;
+  let blue =  100*data["root"].r;
+  let green = 0*data["root"].i;
+  return {"red": red, "blue": blue, "green": green}
+}
+
+function colorFunctionD(data) {
+  let red = 0*data["root"].i;
+  let blue =  100*data["root"].r;
+  let green = 100*data["root"].r;
+  return {"red": red, "blue": blue, "green": green}
+}
+
 
 let f = new Functions();
-let canvas0 = new ComplexCanvas("basin-canvas-0", f.z5, f.z5p, -1.5, 1.5, -1.5, 1.5);
-canvas0.drawBasinOfAttraction();
+let canvas0 = new ComplexCanvas("basin-canvas-0", f.z5, f.z5p);
+canvas0.drawBasinOfAttraction(colorFunctionA);
 
 let canvas1 = new ComplexCanvas("basin-canvas-1", f.tan, f.tanp);
-canvas1.drawBasinOfAttraction();
+canvas1.drawBasinOfAttraction(colorFunctionB);
 
 let canvas2 = new ComplexCanvas("basin-canvas-2", f.sin, f.sinp);
-canvas2.drawBasinOfAttraction();
+canvas2.drawBasinOfAttraction(colorFunctionC);
 
 let canvas3 = new ComplexCanvas("basin-canvas-3", f.z7, f.z7p);
-canvas3.drawBasinOfAttraction();
+canvas3.drawBasinOfAttraction(colorFunctionD);
